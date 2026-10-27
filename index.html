@@ -213,7 +213,7 @@
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
                             <label class="block text-[11px] font-bold text-slate-600 mb-1">GitHub Repo (<code>Owner/Repo</code>)</label>
-                            <input type="text" id="pub-repo-input" value="IndoreFlorist/UGC-NET-Paper-1-Mock-Test" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500">
+                            <input type="text" id="pub-repo-input" value="IndoreFlorist/Paper-1-Mock" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500">
                         </div>
                         <div>
                             <label class="block text-[11px] font-bold text-slate-600 mb-1">GitHub Personal Access Token (<code>ghp_...</code>)</label>
@@ -1382,7 +1382,7 @@
             document.getElementById('pub-topic-label').innerText = `${selectedTopicIndex + 1}. ${topicTitle}`;
             document.getElementById('pub-target-path').innerText = targetPath;
 
-            const savedRepo = localStorage.getItem('jrf_p1_gh_repo') || 'IndoreFlorist/UGC-NET-Paper-1-Mock-Test';
+            const savedRepo = localStorage.getItem('jrf_p1_gh_repo') || 'IndoreFlorist/Paper-1-Mock';
             const savedToken = localStorage.getItem('jrf_gh_token') || '';
             document.getElementById('pub-repo-input').value = savedRepo;
             document.getElementById('pub-token-input').value = savedToken;
@@ -1460,7 +1460,7 @@
             const token = document.getElementById('pub-token-input').value.trim();
 
             if (!repo || !repo.includes('/')) {
-                setPublisherStatus("Please enter your GitHub repository name (e.g., IndoreFlorist/UGC-NET-Paper-1-Mock-Test).", "error");
+                setPublisherStatus("Please enter your GitHub repository name (e.g., IndoreFlorist/Paper-1-Mock).", "error");
                 return;
             }
             if (!token) {
@@ -1536,7 +1536,7 @@
             }
 
             if (!repo || !repo.includes('/')) {
-                setPublisherStatus("Please enter a valid GitHub repository (e.g., IndoreFlorist/UGC-NET-Paper-1-Mock-Test).", "error");
+                setPublisherStatus("Please enter a valid GitHub repository (e.g., IndoreFlorist/Paper-1-Mock).", "error");
                 return;
             }
 
