@@ -479,7 +479,7 @@
 
                 <div class="relative z-10 text-xs text-brand-200/70 flex items-center justify-between border-t border-white/10 pt-4">
                     <span>Dedicated Paper 1 Edition</span>
-                    <span class="font-semibold text-brand-200">v5.0 Ignition</span>
+                    <span class="font-semibold text-brand-200">v5.1 Smart-Nav</span>
                 </div>
                 
                 <!-- Decorative Blur Circles -->
@@ -991,16 +991,12 @@
 
     <script>
         // ==================== 1. PERMANENT CLEAN FILENAME SANITIZER ====================
-        // Converts any session title into a clean, deterministic filename:
-        // e.g., (1, "Teaching Aptitude PYQs - Part 1") -> "1__Teaching_Aptitude_PYQs_Part_1.js"
         function sanitizeFilename(idx, title) {
             const clean = title.replace(/^\d+[\.\s]+/, '').replace(/[^a-zA-Z0-9]+/g, '_').replace(/^_+|_+$/g, '');
             return `${idx}__${clean}.js`;
         }
 
         // ==================== 2. DEDICATED PAPER 1 IGNITION BATCH REPOSITORY CATALOG ====================
-        // Exact 13 Subjects & 144 Sessions from your Arrange PYQ Topics document.
-        // Path Architecture: questions/<subject.folder>/<idx>__<Sanitized_Title>.js
         const PAPER1_CATALOG = {
             label: "Ignition Batch – UGC NET Paper 1",
             shortName: "Paper 1 • Ignition",
@@ -1289,7 +1285,6 @@
             }
         }
 
-        // Automatically probes a topic .js file on GitHub Pages to detect if it exists & how many questions it has
         async function probeTopicFileStatus(folder, idx, topicTitle) {
             const fname = sanitizeFilename(idx + 1, topicTitle);
             const relPath = `questions/${folder}/${fname}`;
@@ -1319,8 +1314,8 @@
         let currentWizardStep = 1;
 
         let selectedBatch = 'ignition-p1';
-        let selectedSubjectIndex = 0; // Defaults to 1. Teaching Aptitude
-        let selectedTopicIndex = 0;   // Defaults to 1. Teaching Aptitude PYQs - Part 1
+        let selectedSubjectIndex = 0;
+        let selectedTopicIndex = 0;
 
         let selectedUnitLabel = '1. Teaching Aptitude';
         let testTimerMode = 'overall';
@@ -1337,7 +1332,92 @@
         let isDataLoaded = false;
         let activeTestName = "1. Teaching Aptitude PYQs - Part 1";
 
+        // ==================== SMARTPHONE HARDWARE BACK-BUTTON & HISTORY MANAGER ====================
+        let isHandlingPopState = false;
+
+        function pushNavState(stateObj) {
+            if (isHandlingPopState) return;
+            try {
+                const current = history.state;
+                if (current && JSON.stringify(current) === JSON.stringify(stateObj)) return;
+                history.pushState(stateObj, '');
+            } catch (e) {}
+        }
+
+        window.addEventListener('popstate', (event) => {
+            isHandlingPopState = true;
+
+            // 1. If Custom Confirmation Modal is open, close it first
+            const customModal = document.getElementById('custom-modal');
+            if (customModal && !customModal.classList.contains('hidden')) {
+                customModal.classList.add('hidden');
+                customModal.classList.remove('flex');
+                isHandlingPopState = false;
+                return;
+            }
+
+            // 2. If GitHub Publisher Modal is open, close it
+            const pubModal = document.getElementById('github-publish-modal');
+            if (pubModal && !pubModal.classList.contains('hidden')) {
+                closeGitHubPublisher();
+                isHandlingPopState = false;
+                return;
+            }
+
+            // 3. If Mobile Question Palette Drawer is open during a test, close it first
+            const paletteDrawer = document.getElementById('palette-drawer');
+            if (paletteDrawer && !paletteDrawer.classList.contains('translate-y-full') && window.innerWidth < 1024) {
+                toggleMobilePalette(false);
+                isHandlingPopState = false;
+                return;
+            }
+
+            // 4. If currently inside an active Test, ask confirmation before exiting to Setup
+            const testView = document.getElementById('test-view');
+            if (testView && !testView.classList.contains('hidden')) {
+                // Re-push test state so the user stays in the test until they confirm exit
+                try { history.pushState({ view: 'test' }, ''); } catch (e) {}
+                confirmExitToSetup();
+                isHandlingPopState = false;
+                return;
+            }
+
+            // 5. If on Waiting Countdown screen, skip directly to Results
+            const waitingView = document.getElementById('waiting-view');
+            if (waitingView && !waitingView.classList.contains('hidden')) {
+                skipWaitingNow();
+                isHandlingPopState = false;
+                return;
+            }
+
+            // 6. If on Results screen, return cleanly to Setup screen
+            const resultsView = document.getElementById('results-view');
+            if (resultsView && !resultsView.classList.contains('hidden')) {
+                resetToSetup();
+                isHandlingPopState = false;
+                return;
+            }
+
+            // 7. Navigate across Onboarding Wizard steps or Setup view
+            const state = event.state;
+            if (!state) {
+                closeOnboardingWizard();
+            } else if (state.view === 'wizard') {
+                const modal = document.getElementById('onboarding-modal');
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+                setWizardStep(state.step || 1);
+            } else if (state.view === 'setup') {
+                closeOnboardingWizard();
+            }
+
+            isHandlingPopState = false;
+        });
+
         window.addEventListener('DOMContentLoaded', () => {
+            try {
+                history.replaceState({ view: 'setup' }, '');
+            } catch (e) {}
             populateLocalSubjectDropdowns();
             selectBatch('ignition-p1');
             updateTotalUploadedCounter();
@@ -1395,6 +1475,7 @@
             const modal = document.getElementById('github-publish-modal');
             modal.classList.remove('hidden');
             modal.classList.add('flex');
+            pushNavState({ view: 'publisher' });
         }
 
         function closeGitHubPublisher() {
@@ -1627,6 +1708,7 @@
             const modal = document.getElementById('onboarding-modal');
             modal.classList.add('hidden');
             modal.classList.remove('flex');
+            pushNavState({ view: 'setup' });
         }
 
         function setWizardStep(step) {
@@ -1669,6 +1751,8 @@
                 stepBadge.innerText = 'Step 3 of 3 • System File Upload';
                 title.innerText = 'Upload .JS Question Bank from Your Device';
             }
+
+            pushNavState({ view: 'wizard', step: step });
         }
 
         function wizardPrevStep() {
@@ -2351,6 +2435,8 @@
             document.getElementById('setup-view').classList.add('hidden');
             document.getElementById('test-view').classList.remove('hidden');
 
+            pushNavState({ view: 'test' });
+
             renderPalette();
             loadQuestion(0);
             
@@ -2402,6 +2488,7 @@
             if (nextState) {
                 drawer.classList.remove('translate-y-full');
                 backdrop.classList.remove('hidden');
+                pushNavState({ view: 'palette' });
             } else {
                 drawer.classList.add('translate-y-full');
                 backdrop.classList.add('hidden');
@@ -2642,6 +2729,8 @@
             waitingView.classList.remove('hidden');
             waitingView.classList.add('flex');
 
+            pushNavState({ view: 'waiting' });
+
             const randomQuote = consistencyQuotes[Math.floor(Math.random() * consistencyQuotes.length)];
             document.getElementById('motivational-quote-text').innerText = `"${randomQuote.quote}"`;
             document.getElementById('motivational-quote-author').innerText = randomQuote.theme;
@@ -2690,6 +2779,7 @@
 
         function renderFinalResults() {
             document.getElementById('results-view').classList.remove('hidden');
+            pushNavState({ view: 'results' });
 
             let correct = 0;
             let incorrect = 0;
@@ -2854,6 +2944,7 @@
             document.getElementById('test-view').classList.add('hidden');
             document.getElementById('waiting-view').classList.add('hidden');
             document.getElementById('setup-view').classList.remove('hidden');
+            pushNavState({ view: 'setup' });
         }
     </script>
 </body>
